@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ṁ̷̡̿͛Ä̤́̃͑̕R̵̔U̶̢̎̍Y̵̶̮̓Ą̼̋̎T̴̘̪̪̍V̷̦́̐͜O̴͎̔F̴̛̩̭̅F̶̈́I̷̝C̶̓I̴̭̤͜A̶̠Ļ̶̏</title>
+  <link rel="icon" type="image/png" href="https://i.imgur.com/cmOdVwr.png">
+  <script src="https://ssl.p.jwpcdn.com/player/v/8.36.6/jwplayer.js"></script>
+  <script>jwplayer.key = "ITWMv7t88JGzI0xPwW8I0+LveiXX9SWbfdmt0ArUSyc=";</script>
+  <style>
+    :root{--bg:#070707;--panel:#0f0f0f;--muted:#999}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Arial;background:var(--bg);color:#fff}
+    /* layout */
+    .container{display:grid;grid-template-columns:300px 1fr;height:100vh;overflow:hidden}
+    .sidebar{background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:10px}
+    .video-container{display:flex;flex-direction:column;background:#000;position:relative}
+    #player{flex:1;min-height:320px}
+    #fallbackMessage{padding:16px;color:var(--muted);text-align:center}
+    .channel-header{display:flex;gap:10px;align-items:center}
+    .channel-logo{width:48px;height:48px;border-radius:6px}
+    .channel-text{font-weight:700}
+    #clock{font-size:13px;color:var(--muted)}
+    .search-input{width:100%;padding:8px;border-radius:6px;border:none;background:#0b0b0b;color:#fff}
+    .list-container{overflow:auto;flex:1}
+    .channel-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+    .channel-item{background:transparent;border:1px solid #1a1a1a;padding:10px;border-radius:6px;cursor:pointer;text-align:left}
+    .channel-item:hover{background:#121212}
+    .top-controls{display:flex;flex-direction:column;gap:8px}
+    .credits{font-size:12px;color:var(--muted)}
+    /* loader & popup */
+    #loadingScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:9999}
+    .spinner{width:64px;height:64px;border-radius:50%;border:6px solid #111;border-top-color:#2f9cff;animation:spin 1s linear infinite;margin-bottom:12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{color:#fff;margin-top:8px;font-weight:700}
+    .typewriter{font-family:monospace;border-right:2px solid #fff;white-space:pre;overflow:hidden;padding-top:6px}
+    #popupOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:9998}
+    .popupBox{background:#101010;padding:20px;border-radius:8px;text-align:center}
+    .popupBox button{margin-top:12px;padding:8px 14px;border-radius:6px;border:none;background:#2f9cff;color:#fff;cursor:pointer}
+    /* responsive */
+    @media(max-width:880px){.container{grid-template-columns:1fr} .sidebar{position:absolute;z-index:5;left:0;top:0;bottom:0;width:280px;transform:translateX(-100%);transition:transform .25s} .sidebar.open{transform:translateX(0)}}
+  </style>
+</head>
+<body>
+
+<!-- Loading Spinner -->
+<div id="loadingScreen">
+  <div style="text-align:center">
+    <div class="spinner"></div>
+    <div class="loading-text">Ṁ̷̡̿͛Ä̤́̃͑̕R̵̔U̶̢̎̍Y̵̶̮̓Ą̼̋̎T̴̘̪̪̍V̷̦́̐͜O̴͎̔F̴̛̩̭̅F̶̈́I̷̝C̶̓I̴̭̤͜A̶̠Ļ̶̏</div>
+    <div class="typewriter" id="typewriter"></div>
+  </div>
+</div>
+
+<!-- Popup Overlay -->
+<div id="popupOverlay">
+  <div class="popupBox">
+    <h2>Welcome to Ṁ̷̡̿͛Ä̤́̃͑̕R̵̔U̶̢̎̍Y̵̶̮̓Ą̼̋̎T̴̘̪̪̍V̷̦́̐͜</h2>
+    <p style="color:#bbb;margin:6px 0">Cute ko, Ikaw Dili.</p>
+    <button id="closePopupBtn">Ok!</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="top-controls">
+      <div class="channel-header">
+        <img src="https://i.imgur.com/cmOdVwr.png" alt="MaruyaTV Logo" class="channel-logo" />
+        <div style="display:flex;flex-direction:column">
+          <div class="channel-text">MARUYATV</div>
+          <div id="clock"></div>
+        </div>
+      </div>
+
+      <div class="credits">Made by <a href="#" style="color:#2f9cff">akirachoi01</a></div>
+      <div id="channelCount" style="font-size:13px;color:#bbb"></div>
+
+      <select id="categoryFilter" onchange="setupChannelList()" style="padding:8px;border-radius:6px;background:#0b0b0b;border:none;color:#fff">
+        <option value="all">All Categories</option>
+      </select>
+
+      <input class="search-input" type="search" placeholder="Search..." oninput="setupChannelList()" id="searchInput" />
+    </div>
+
+    <div class="list-container">
+      <ul class="channel-list" id="channelList"></ul>
+    </div>
+  </aside>
+
+  <!-- Video area -->
+  <div class="video-container">
+    <div id="player"></div>
+    <div id="fallbackMessage">Select a channel to start watching!</div>
+  </div>
+</div>
+
+<script>
+/* Typewriter + popup logic */
+document.addEventListener('DOMContentLoaded', () => {
+  const text = "FROM REUSORA TV";
+  const typewriter = document.getElementById('typewriter');
+  let index = 0;
+  (function type(){
+    if(index < text.length){
+      typewriter.textContent += text.charAt(index++);
+      setTimeout(type, 90);
+    } else typewriter.style.borderRight = 'none';
+  })();
+
+  document.getElementById('closePopupBtn').addEventListener('click', () => {
+    document.getElementById('popupOverlay').style.display = 'none';
+  });
+});
+/* Force-hide loading after 20s fallback */
+setTimeout(()=>{ const l=document.getElementById('loadingScreen'); if(l) l.style.display='none' },20000);
+</script>
+
+<!-- Channels embedded (converted from your M3U) -->
+<script>
+const channels = [
+  {
+    name: "Kapamilya Channel",
+    category: "Converge",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Kapamilya_Channel_Logo_2020.svg/2560px-Kapamilya_Channel_Logo_2020.svg.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001248/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "Kapamilya Channel HD",
+    category: "Converge",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Kapamilya_Channel_Logo_2020.svg/2560px-Kapamilya_Channel_Logo_2020.svg.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001286/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "PBO",
+    category: "Converge",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Pinoy_Box_Office_logo.svg/1200px-Pinoy_Box_Office_logo.svg.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.113:6910/001/2/ch00000090990000001078/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "DZMM Teleradyo",
+    category: "Converge",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/e/e5/DZMM_TeleRadyo.svg/1200px-DZMM_TeleRadyo.svg.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001249/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "ANC",
+    category: "Converge",
+    logo: "https://i.imgur.com/meqX8zC.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001274/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "MYX Philippines",
+    category: "Converge",
+    logo: "https://i.imgur.com/meqX8zC.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.111:6910/001/2/ch00000090990000001252/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "GMA 7",
+    category: "Converge",
+    logo: "https://i.imgur.com/meqX8zC.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001093/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "GTV",
+    category: "Converge",
+    logo: "https://i.imgur.com/meqX8zC.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001143/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "ALL TV",
+    category: "Converge",
+    logo: "https://brandlogo.org/wp-content/uploads/2024/05/All-TV-Logo-300x300.png.webp",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001179/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "Bilyonaryo Channel",
+    category: "Converge",
+    logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcxvjeBIthYiEaZHeVeYpDicIlOTdv3G6lzoal3VM2xVzWu_J7XxM657oz&s=10",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.111:6910/001/2/ch00000090990000001124/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "TV5",
+    category: "Converge",
+    logo: "https://static.wikia.nocookie.net/russel/images/7/7a/TV5_HD_Logo_2024.png/revision/latest/scale-to-width-down/290?cb=20240202141126",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.111:6910/001/2/ch00000090990000001088/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "A2Z",
+    category: "Converge",
+    logo: "https://static.wikia.nocookie.net/russel/images/8/85/A2Z_Channel_11_without_Channel_11_3D_Logo_2020.png/revision/latest?cb=20231101144828",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.113:6910/001/2/ch00000090990000001087/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "NET 25",
+    category: "Converge",
+    logo: "https://i.imgur.com/meqX8zC.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.111:6910/001/2/ch00000090990000001090/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "IBC 13",
+    category: "Converge",
+    logo: "https://static.wikia.nocookie.net/logopedia/images/f/f5/IBC_13_Logo_2012.png/revision/latest?cb=20170830080345",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.111:6910/001/2/ch00000090990000001089/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "UNTV",
+    category: "Converge",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/9/99/UNTV-Logo-2016.svg/300px-UNTV-Logo-2016.svg.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.111:6910/001/2/ch00000090990000001091/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "PTV4",
+    category: "Converge",
+    logo: "https://static.wikia.nocookie.net/russel/images/d/dc/PTV_4_Para_Sa_Bayan_Alternative_Logo_June_2017.png/revision/latest?cb=20171019065428",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.113:6910/001/2/ch00000090990000001086/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "DZRH TV",
+    category: "Converge",
+    logo: "https://static.wikia.nocookie.net/russel/images/6/62/DZRH_TV_Logo_November_2021.png/revision/latest?cb=20211215134648",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001174/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "Knowledge Channel",
+    category: "Converge",
+    logo: "https://i.imgur.com/meqX8zC.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001340/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  },
+  {
+    name: "Aliw Channel",
+    category: "Converge",
+    logo: "https://upload.wikimedia.org/wikipedia/en/b/b9/Aliw_Channel_23_logo.png",
+    type: "dash",
+    url: "https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.110:6910/001/2/ch00000090990000001109/manifest.mpd?virtualDomain=001.live_hls.zte.com",
+    drm: { type:"widevine", licenseUrl:"https://proxy1-mauve.vercel.app/api/proxy?url=http://143.44.136.74:9443/widevine/?deviceId=02:00:00:00:00:00" }
+  }
+];
+</script>
+
+<!-- Player + UI logic -->
+<script>
+/* Clock */
+function updateClock(){const now=new Date();document.getElementById('clock').textContent = now.toLocaleTimeString(); }
+setInterval(updateClock,1000); updateClock();
+
+/* JWPlayer instance */
+const jwInstance = jwplayer("player");
+
+/* populate categories (only 'Converge' present but code generic) */
+function populateCategories(){
+  const set = new Set(["all"]);
+  channels.forEach(c=>set.add(c.category||'Uncategorized'));
+  const sel = document.getElementById('categoryFilter');
+  sel.innerHTML = '';
+  Array.from(set).forEach(cat=>{
+    const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat.charAt(0).toUpperCase()+cat.slice(1);
+    sel.appendChild(opt);
+  });
+}
+
+/* Render list */
+function setupChannelList(){
+  const term = document.getElementById('searchInput').value.toLowerCase();
+  const cat = document.getElementById('categoryFilter').value;
+  const list = document.getElementById('channelList');
+  list.innerHTML = '';
+  let count = 0;
+  channels.forEach((ch, idx)=>{
+    const matchesSearch = ch.name.toLowerCase().includes(term);
+    const matchesCat = (cat === 'all' || ch.category === cat);
+    if(matchesSearch && matchesCat){
+      const li = document.createElement('li');
+      li.className = 'channel-item';
+      li.innerHTML = `<div style="display:flex;align-items:center;gap:10px">
+        <img src="${ch.logo||''}" alt="" style="width:36px;height:24px;object-fit:contain;border-radius:4px" />
+        <div style="flex:1">${ch.name}</div>
+        <div style="font-size:12px;color:#9aa">${ch.type.toUpperCase()}</div>
+      </div>`;
+      li.onclick = ()=>loadChannel(idx);
+      list.appendChild(li); count++;
+    }
+  });
+  document.getElementById('channelCount').textContent = `${count} channel${count!==1?'s':''} available`;
+}
+
+/* Load channel into JWPlayer (DASH/HLS + Widevine/ClearKey supported) */
+function loadChannel(index){
+  const ch = channels[index];
+  if(!ch) return;
+  const cfg = {
+    file: ch.url,
+    width: '100%',
+    height: '100%',
+    autostart: true
+  };
+  // tell jwplayer type dash for mpd; JW supports it automatically but explicit mapping helps
+  if(ch.type === 'dash') cfg.type = 'dash';
+  if(ch.type === 'hls') cfg.type = 'hls';
+  // DRM
+  if(ch.drm){
+    if(ch.drm.type === 'widevine' || ch.drm.licenseUrl || ch.drm.widevine) {
+      // JWPlayer expects drm config object; older versions accept drm: {widevine: {url: '...'}}
+      cfg.drm = { widevine: { url: ch.drm.licenseUrl || (ch.drm.widevine && ch.drm.widevine.url) } };
+    }
+    if(ch.drm.type === 'clearkey' || ch.drm.clearkey) {
+      // JW's clearkey support differs by version; attempt to pass as clearkey object
+      cfg.drm = cfg.drm || {};
+      cfg.drm.clearkey = {
+        keyId: ch.drm.keyId || (ch.drm.clearkey && ch.drm.clearkey.keyId),
+        key: ch.drm.key || (ch.drm.clearkey && ch.drm.clearkey.key)
+      };
+    }
+  }
+  jwInstance.setup(cfg);
+  // hide loader when playback begins
+  jwInstance.on && jwInstance.on('play', () => {
+    const l=document.getElementById('loadingScreen'); if(l) l.style.display='none';
+    document.getElementById('fallbackMessage').style.display = 'none';
+  });
+}
+
+/* Auto-load first channel and init UI */
+populateCategories();
+setupChannelList();
+loadChannel(0);
+
+/* Search input hooks (already set inline) */
+document.getElementById('searchInput').addEventListener('input', setupChannelList);
+
+/* Basic anti-copy & anti-debug */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='i') || (e.ctrlKey && e.key.toLowerCase()==='u')){
+    e.preventDefault(); return false;
+  }
+});
+document.addEventListener('contextmenu', e=>e.preventDefault());
+
+/* detect devtools (simple) */
+(function detectDevTools(){
+  let open=false;
+  setInterval(()=>{
+    const start = performance.now();
+    debugger;
+    if(performance.now()-start>100) {
+      if(!open){
+        open=true;
+        // degrade UI if devtools detected
+        document.body.innerHTML = '<div style="color:#fff;background:#000;height:100vh;display:flex;align-items:center;justify-content:center;font-size:18px">DevTools detected — reload to continue.</div>';
+      }
+    }
+  },2000);
+})();
+</script>
+
+</body>
+</html>
